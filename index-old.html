@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NEPT Flashcards</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0f0f0f;color:#e8e8e8;min-height:100vh;display:flex;flex-direction:column}
+header{padding:.9rem 1.25rem;border-bottom:.5px solid #2a2a2a;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem}
+header h1{font-size:15px;font-weight:500}
+.hdr-sub{font-size:11px;color:#555;margin-top:2px}
+.hdr-btns{display:flex;gap:6px}
+button{font-family:inherit;font-size:12px;padding:5px 11px;border-radius:8px;border:.5px solid #333;background:transparent;color:#ccc;cursor:pointer;transition:background .12s,color .12s;white-space:nowrap}
+button:hover{background:#1e1e1e;color:#fff}
+button:active{transform:scale(.98)}
+button.pri{background:#1a1a1a;border-color:#3a3a3a;color:#e0e0e0}
+button.ok{border-color:#1d6a40;color:#4ade80}
+button.ok:hover{background:#0d2a1a}
+button.bad{border-color:#6a1d1d;color:#f87171}
+button.bad:hover{background:#2a0d0d}
+button.sel{background:#0d1a2a;border-color:#4a9eff;color:#4a9eff}
+.topic-bar{padding:.6rem 1.25rem;border-bottom:.5px solid #1a1a1a;display:flex;gap:5px;flex-wrap:wrap;align-items:center}
+.topic-bar>span{font-size:10px;color:#555;text-transform:uppercase;letter-spacing:.06em;margin-right:2px}
+.tb{font-size:11px;padding:3px 9px;border-radius:14px}
+.main{flex:1;display:flex;flex-direction:column;align-items:center;padding:1.25rem 1rem;gap:1.1rem}
+.prog-wrap{width:100%;max-width:640px;display:flex;align-items:center;gap:10px}
+.prog-bg{flex:1;height:3px;background:#1e1e1e;border-radius:2px;overflow:hidden}
+.prog-fill{height:100%;background:#4a9eff;border-radius:2px;transition:width .3s}
+.prog-lbl{font-size:11px;color:#555;min-width:44px;text-align:right}
+.score-row{display:flex;gap:7px}
+.pill{font-size:11px;padding:3px 9px;border-radius:14px;border:.5px solid}
+.pill.kn{border-color:#1d6a40;color:#4ade80;background:#0d2a1a}
+.pill.un{border-color:#6a1d1d;color:#f87171;background:#2a0d0d}
+.pill.tp{border-color:#2a3a4a;color:#4a9eff;background:#0a1520}
+.scene{width:100%;max-width:640px;height:290px;perspective:1200px;cursor:pointer}
+.inner{width:100%;height:100%;position:relative;transform-style:preserve-3d;transition:transform .38s cubic-bezier(.4,0,.2,1)}
+.inner.flip{transform:rotateY(180deg)}
+.face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:13px;border:.5px solid #2a2a2a;background:#161616;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:1.6rem;text-align:center;user-select:none}
+.face.back{transform:rotateY(180deg);background:#131a13;border-color:#1e3022}
+.flbl{font-size:10px;color:#444;text-transform:uppercase;letter-spacing:.08em;margin-bottom:.6rem}
+.face.back .flbl{color:#2a5030}
+.ftxt{font-size:18px;font-weight:500;color:#e8e8e8;line-height:1.5}
+.face.back .ftxt{font-size:14px;font-weight:400;color:#c8dcc8}
+.thint{margin-top:1.1rem;font-size:11px;color:#2e2e2e}
+.act-row{display:flex;gap:10px;width:100%;max-width:640px}
+.act-row button{flex:1;padding:10px;font-size:13px;border-radius:10px}
+.done-card{width:100%;max-width:640px;background:#161616;border:.5px solid #2a2a2a;border-radius:13px;padding:1.75rem;text-align:center;display:none;flex-direction:column;align-items:center;gap:.8rem}
+.done-card h2{font-size:17px;font-weight:500}
+.big-score{font-size:42px;font-weight:500;color:#4ade80;line-height:1}
+.done-card .sub{font-size:12px;color:#555}
+.done-btns{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:.4rem}
+@media(max-width:500px){.ftxt{font-size:15px}.face.back .ftxt{font-size:13px}.scene{height:260px}}
+</style>
+</head>
+<body>
+<header>
+  <div><h1>NEPT Flashcards</h1><div class="hdr-sub" id="hdr-sub"></div></div>
+  <div class="hdr-btns">
+    <button class="pri" onclick="shuffleDeck()">⇄ Shuffle</button>
+    <button class="pri" onclick="reset()">↺ Restart</button>
+  </div>
+</header>
+<div class="topic-bar" id="topic-bar"><span>Filter:</span></div>
+<div class="main">
+  <div class="prog-wrap" id="prog-wrap">
+    <div class="prog-bg"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
+    <div class="prog-lbl" id="prog-lbl">0 / 0</div>
+  </div>
+  <div class="score-row">
+    <div class="pill kn" id="pill-kn">✓ 0 known</div>
+    <div class="pill un" id="pill-un">✗ 0 to review</div>
+    <div class="pill tp" id="pill-tp" style="display:none"></div>
+  </div>
+  <div class="scene" id="scene" onclick="flipCard()">
+    <div class="inner" id="inner">
+      <div class="face front">
+        <div class="flbl" id="flbl">Topic</div>
+        <div class="ftxt" id="fq">—</div>
+        <div class="thint">tap to reveal</div>
+      </div>
+      <div class="face back">
+        <div class="flbl">Answer</div>
+        <div class="ftxt" id="fa">—</div>
+      </div>
+    </div>
+  </div>
+  <div class="act-row" id="act-row">
+    <button class="bad" onclick="mark(false)">✗ Didn't know</button>
+    <button class="ok" onclick="mark(true)">✓ Knew it</button>
+  </div>
+  <div class="done-card" id="done-card">
+    <h2>Deck complete</h2>
+    <div class="big-score" id="final-pct">—</div>
+    <div class="sub" id="final-sub">—</div>
+    <div class="done-btns">
+      <button class="pri" onclick="reviewMissed()">Review missed cards</button>
+      <button onclick="reset()">Restart deck</button>
+    </div>
+  </div>
+</div>
+<script>
+const CARDS=[{"topic": "DRSABCDE", "q": "What does DRSABCDE stand for?", "a": "Danger, Response, Send for help, Airway, Breathing, Circulation, Disability, Exposure & Evaluate"}, {"topic": "DRSABCDE", "q": "D \u2014 what do you assess first?", "a": "Danger \u2014 ensure scene is safe for yourself, bystanders, and patient before approaching"}, {"topic": "DRSABCDE", "q": "R \u2014 how do you assess Response?", "a": "Use AVPU: Alert, Voice (responds to voice), Pain (responds to pain), Unresponsive"}, {"topic": "DRSABCDE", "q": "S \u2014 what does 'Send for help' mean?", "a": "Call 000 (or direct a specific person to call) before proceeding with further assessment"}, {"topic": "DRSABCDE", "q": "A \u2014 how do you manage a compromised airway?", "a": "Head-tilt chin-lift (or jaw thrust if spinal injury suspected); clear visible obstruction; recovery position if breathing"}, {"topic": "DRSABCDE", "q": "B \u2014 what do you assess under Breathing?", "a": "Look, listen, feel up to 10 sec; assess rate (RR), depth, effort, SpO2; auscultate"}, {"topic": "DRSABCDE", "q": "C \u2014 what does Circulation involve at PTO level?", "a": "HR, capillary refill (distal vs central), BP, skin (WPD vs CPC), ECG"}, {"topic": "DRSABCDE", "q": "D \u2014 what does Disability assess?", "a": "GCS, pupils (PERL), temperature, BGL"}, {"topic": "DRSABCDE", "q": "E \u2014 what does Exposure & Evaluate involve?", "a": "Expose relevant areas; assess Pain (DOLORS), Stroke (MASS), Anaphylaxis (RASH); maintain dignity and warmth"}, {"topic": "DRSABCDE", "q": "What variant of DRSABCDE is used for MVA / catastrophic haemorrhage?", "a": "DRSCABCDE \u2014 adds C for Catastrophic Haemorrhage immediately after Send for help, before Airway"}, {"topic": "DRSABCDE", "q": "What variant is used for CPR?", "a": "DRSABCD \u2014 ends with CPR and Defibrillation instead of Disability/Exposure"}, {"topic": "DRSABCDE", "q": "When does CPR begin in the DRSABCDE algorithm?", "a": "After Airway step \u2014 if patient is unresponsive and not breathing normally, begin CPR immediately after sending for help"}, {"topic": "GCS", "q": "What do the three components of GCS assess?", "a": "Eyes (E), Verbal (V), Motor (M) \u2014 scored E4 + V5 + M6 = 15 maximum"}, {"topic": "GCS", "q": "GCS Eyes \u2014 what are the 4 scores?", "a": "4 = Spontaneous; 3 = To voice; 2 = To pain; 1 = None"}, {"topic": "GCS", "q": "GCS Verbal \u2014 what are the 5 scores?", "a": "5 = Orientated; 4 = Confused; 3 = Inappropriate words; 2 = Incomprehensible sounds; 1 = No verbal response"}, {"topic": "GCS", "q": "GCS Motor \u2014 what are the 6 scores?", "a": "6 = Obeys commands; 5 = Localises pain; 4 = Withdraws from pain; 3 = Abnormal flexion; 2 = Abnormal extension; 1 = No response"}, {"topic": "GCS", "q": "What is the minimum and maximum GCS score?", "a": "Minimum 3 (no response in any category), maximum 15 (fully conscious)"}, {"topic": "GCS", "q": "At what GCS is a trauma patient considered time critical?", "a": "GCS < 13 if aged 16 years or older; GCS < 15 if aged 15 years or younger"}, {"topic": "GCS", "q": "When should care be escalated due to GCS change?", "a": "Any reduction from normal for low acuity; reduction > 2 points from baseline for medium/high acuity"}, {"topic": "GCS", "q": "For paediatric GCS (4 years and under), how does Verbal differ from adult?", "a": "5 = Appropriate words/social smile; 4 = Cries but consolable; 3 = Persistently irritable; 2 = Moans to pain; 1 = No verbal response"}, {"topic": "AVPU", "q": "What does AVPU stand for?", "a": "Alert, Verbally responsive, Painfully responsive, Unresponsive"}, {"topic": "AVPU", "q": "A \u2014 Alert: what does this mean clinically?", "a": "Patient is aware of examiner, responds to environment, can follow commands, opens eyes spontaneously"}, {"topic": "AVPU", "q": "V \u2014 Verbally responsive: what does this mean?", "a": "Eyes do not open spontaneously; opens eyes and responds meaningfully only to a verbal stimulus directed at them"}, {"topic": "AVPU", "q": "P \u2014 Painfully responsive: what does this mean?", "a": "Eyes do not open spontaneously or to voice; patient only responds (moves, moans, cries) to painful stimuli"}, {"topic": "AVPU", "q": "U \u2014 Unresponsive: what does this mean?", "a": "No spontaneous response and no response to verbal or painful stimuli"}, {"topic": "VSS Normal Values", "q": "What is the normal adult respiratory rate?", "a": "12-16 breaths per minute"}, {"topic": "VSS Normal Values", "q": "What is the normal adult SpO2 range?", "a": "94-98%. Give oxygen when SpO2 < 92%"}, {"topic": "VSS Normal Values", "q": "What SpO2 target applies to COPD and other chronically hypoxaemic patients?", "a": "88-92% \u2014 avoid over-administration of oxygen in this group"}, {"topic": "VSS Normal Values", "q": "What is the normal adult heart rate?", "a": "60-100 BPM"}, {"topic": "VSS Normal Values", "q": "What is the normal adult systolic BP?", "a": "> 100 mmHg systolic for adequate perfusion"}, {"topic": "VSS Normal Values", "q": "What is normal capillary refill time?", "a": "Central and distal < 2 seconds (adequate perfusion); distal > 2 seconds = borderline"}, {"topic": "VSS Normal Values", "q": "What is normal skin in adequate perfusion?", "a": "Warm, Pink, Dry (WPD)"}, {"topic": "VSS Normal Values", "q": "What skin presentation suggests poor perfusion?", "a": "Cool, Pale, Clammy (CPC)"}, {"topic": "VSS Normal Values", "q": "What is the normal adult temperature range?", "a": "36.1 to 37.1 degrees Celsius"}, {"topic": "VSS Normal Values", "q": "What is the normal adult BGL range?", "a": "4-8 mmol/L"}, {"topic": "VSS Normal Values", "q": "What vital signs indicate time criticality after potential major trauma?", "a": "HR < 60 or > 120; RR < 10 or > 30; SBP < 90 mmHg; SpO2 < 90%; GCS < 13 (adult)"}, {"topic": "VSS Normal Values", "q": "What does systolic represent in blood pressure?", "a": "Peak pressure when the heart is contracting \u2014 systolic sky high"}, {"topic": "VSS Normal Values", "q": "What does diastolic represent in blood pressure?", "a": "Pressure when the heart is at rest between beats \u2014 diastolic down low"}, {"topic": "VSS Normal Values", "q": "What does the auscultation method give you vs the palpated method for BP?", "a": "Auscultation: both systolic and diastolic. Palpated: systolic only"}, {"topic": "PSA / RSA", "q": "What does PSA stand for and what does it assess?", "a": "Perfusion Status Assessment \u2014 assesses the cardiovascular system's ability to deliver oxygenated blood and remove metabolic waste"}, {"topic": "PSA / RSA", "q": "What 5 parameters make up the NEPT PSA (BCHSS)?", "a": "Blood pressure, Cap refill, Heart rate, Skin, State of consciousness"}, {"topic": "PSA / RSA", "q": "What vitals indicate adequate perfusion on the PSA?", "a": "Skin WPD; HR 60-100; SBP > 100; Alert; cap refill central and distal < 2 sec"}, {"topic": "PSA / RSA", "q": "What vitals indicate borderline perfusion?", "a": "Skin WPD or CPC; HR 50-100; SBP 80-100; Alert; central CRT < 2 sec, distal > 2 sec"}, {"topic": "PSA / RSA", "q": "What vitals indicate inadequate perfusion?", "a": "Skin CPC; HR < 50 or > 100; SBP 60-80; Alert or altered; central CRT may be normal, distal > 2 sec"}, {"topic": "PSA / RSA", "q": "What does RSA stand for and what does it assess?", "a": "Respiratory Status Assessment \u2014 assesses ventilation (air movement) and gas exchange at the alveolar level"}, {"topic": "PSA / RSA", "q": "What are the 9 components of the RSA (ASSRRESPS)?", "a": "Appearance, Speech, Sounds/Auscultation, Respiratory Rate, Rhythm, Effort, Skin, Pulse, State of consciousness"}, {"topic": "PSA / RSA", "q": "What RR indicates critical respiratory distress?", "a": "> 30 or < 8 breaths per minute"}, {"topic": "PSA / RSA", "q": "What speech pattern is seen in critical respiratory distress?", "a": "Unable to speak, or single word / grunting only"}, {"topic": "PSA / RSA", "q": "What is a silent chest and what does it indicate?", "a": "Little to no air movement on auscultation \u2014 indicates critical bronchospasm, a life-threatening finding"}, {"topic": "PSA / RSA", "q": "How often should VSS be repeated if medications are administered?", "a": "Every 5 minutes (standard interval is 15 min; drops to 5 min if meds given)"}, {"topic": "Acronyms & Tools", "q": "What does AMPLE stand for?", "a": "Allergies, Medications, Past medical history, Last ins/outs, Events leading to"}, {"topic": "Acronyms & Tools", "q": "What does DOLORS stand for?", "a": "Describe the pain, Onset, Location, Other pain, Relief/Radiation, Severity"}, {"topic": "Acronyms & Tools", "q": "What does IMISTAMBO stand for (handover)?", "a": "Identification/Introduction, Mechanism/Main complaint, Injury/Information, Signs/VSS, Treatment and Trends, Allergies, Medications, Background, Other relevant"}, {"topic": "Acronyms & Tools", "q": "What does MASS stand for (stroke screen)?", "a": "Melbourne = Mouth (facial droop), Ambulance = Arms (drift), Stroke = Speech, Screen = Sugar (BGL)"}, {"topic": "Acronyms & Tools", "q": "What does PILSDUCT stand for (musculoskeletal)?", "a": "Pain, Irregularity, Loss of function/power, Swelling, Deformity, Unusual movement, Crepitus, Tenderness"}, {"topic": "Acronyms & Tools", "q": "What does FRACTURES stand for?", "a": "Fix, React to haemorrhage, Afford support, Try for position, Use appropriate splint, Reassure, Every occasion suspect fracture, Shock, Manage and position"}, {"topic": "Acronyms & Tools", "q": "What does ETHANE stand for (scene report)?", "a": "Exact location, Type of incident, Hazards, Access and egress, Number of patients, Emergency services needed"}, {"topic": "Acronyms & Tools", "q": "What does TREND stand for (medication administration record)?", "a": "Time and date, Route, Effect, Name, Dose"}, {"topic": "Acronyms & Tools", "q": "What does OPQRST stand for (pain assessment)?", "a": "Onset, Provocation, Quality, Radiation, Severity, Time"}, {"topic": "Acronyms & Tools", "q": "What does OLD stand for in mental health assessment?", "a": "Observe, Listen, Discuss"}, {"topic": "Acronyms & Tools", "q": "What are the 5 Rights of medication administration?", "a": "Right Patient, Right Medication, Right Dose, Right Time, Right Route"}, {"topic": "Acronyms & Tools", "q": "What is HALT and why does it matter?", "a": "Hungry, Angry, Late, Tired \u2014 pre-arrival assessment bias factors that can affect patient management"}, {"topic": "Anaphylaxis", "q": "What is the RASH+ criteria for anaphylaxis?", "a": "Sudden onset AND two or more of: Respiratory distress, Abdominal symptoms, Skin/mucosal symptoms, Hypotension (SBP < 90) \u2014 OR isolated hypotension/respiratory distress following known antigen exposure"}, {"topic": "Anaphylaxis", "q": "What does R stand for in RASH?", "a": "Respiratory distress \u2014 difficulty breathing, noisy breathing, wheeze, cough, hoarse voice"}, {"topic": "Anaphylaxis", "q": "What does A stand for in RASH?", "a": "Abdominal symptoms \u2014 pain, vomiting, diarrhoea"}, {"topic": "Anaphylaxis", "q": "What does S stand for in RASH?", "a": "Skin or mucosal symptoms \u2014 hives/welts, itching, swelling of face/eyes/lips/tongue"}, {"topic": "Anaphylaxis", "q": "What does H stand for in RASH?", "a": "Hypotension \u2014 SBP < 90 mmHg, presenting as dizziness, collapse, feeling faint"}, {"topic": "Anaphylaxis", "q": "What are the two RASH+ isolated criteria?", "a": "Isolated hypotension SBP < 90 mmHg following known exposure; OR isolated respiratory distress following known exposure"}, {"topic": "Anaphylaxis", "q": "What is the first-line treatment for anaphylaxis at PTO level?", "a": "Adrenaline via auto-injector (EpiPen/Anapen) IMI 300 mcg adult. Oxygen via NRB at 10-15 L/min. Salbutamol pMDI if bronchospasm."}, {"topic": "Anaphylaxis", "q": "What oxygen delivery and flow rate is used in anaphylaxis?", "a": "Non-rebreather mask (NRB) at 10-15 L/min"}, {"topic": "Anaphylaxis", "q": "Why can a PTO not draw up 0.5 mg adrenaline from an ampoule?", "a": "Drawing from ampoule is TE scope minimum. PTOs use auto-injectors only (EpiPen = 0.3 mg fixed dose)"}, {"topic": "Anaphylaxis", "q": "If unsure whether it is asthma or anaphylaxis, what do you do?", "a": "Give adrenaline (EpiPen) first, then reassess \u2014 do not delay treatment while differentiating"}, {"topic": "Anaphylaxis", "q": "What is the onset timeframe for anaphylaxis symptoms?", "a": "Usually within 30 minutes, but can be up to 4 hours after exposure"}, {"topic": "Sepsis", "q": "What two criteria systems are used for sepsis recognition in NEPT?", "a": "Modified SIRS (Systemic Inflammatory Response Syndrome) and Modified qSOFA (quick Sepsis-related Organ Failure Assessment)"}, {"topic": "Sepsis", "q": "What Modified SIRS findings suggest suspected sepsis?", "a": "Known history of infection PLUS two or more of: abnormal temperature, elevated HR, elevated RR"}, {"topic": "Sepsis", "q": "What criteria indicate severe sepsis in the NEPT context?", "a": "Suspected sepsis criteria PLUS both: low SBP AND altered mental status (both required)"}, {"topic": "Sepsis", "q": "What does a temperature < 36 degrees suggest in sepsis?", "a": "Possible hypotension and the body giving up \u2014 hypothermia in sepsis is a red flag, not reassuring"}, {"topic": "Sepsis", "q": "What are common risk factors for infection progressing to sepsis?", "a": "Elderly, immunocompromised (e.g. chemotherapy), chronic kidney/liver disease, prolonged hospitalisation, recent antibiotics, invasive devices (e.g. IDC)"}, {"topic": "Sepsis", "q": "What is the PTO management for sepsis?", "a": "Oxygen (high flow NRB for critical illness), supportive care, clinical escalation \u2014 limited pharmacological options at PTO level"}, {"topic": "Oxygen Therapy", "q": "When should oxygen NOT be routinely administered?", "a": "When SpO2 is normal \u2014 oxygen treats hypoxaemia, not breathlessness"}, {"topic": "Oxygen Therapy", "q": "In what critical illnesses should high-flow 100% O2 be given regardless of SpO2?", "a": "Cardiac arrest, major trauma/head injury, undifferentiated/septic shock, anaphylaxis, seizures, DKA and HHS"}, {"topic": "Oxygen Therapy", "q": "What SpO2 target applies to most patients?", "a": "94-98%"}, {"topic": "Oxygen Therapy", "q": "What SpO2 target applies to COPD and chronically hypoxaemic patients?", "a": "88-92% \u2014 avoid over-oxygenation in this group"}, {"topic": "Oxygen Therapy", "q": "What FiO2 and flow rate does a non-rebreather mask (NRB) deliver?", "a": "> 60% FiO2 at 10-15 L/min"}, {"topic": "Oxygen Therapy", "q": "What FiO2 and flow rate does a simple face mask (Hudson mask) deliver?", "a": "40-60% FiO2 at 6-8 L/min"}, {"topic": "Oxygen Therapy", "q": "What FiO2 and flow rate do nasal cannulae deliver?", "a": "> 21-35% FiO2 at 1-6 L/min"}, {"topic": "Oxygen Therapy", "q": "What FiO2 does a BVM deliver with a good seal?", "a": "100% FiO2 at 15 L/min (or enough to inflate reservoir bag)"}, {"topic": "Oxygen Therapy", "q": "Why is SpO2 unreliable in suspected CO poisoning?", "a": "Monitor cannot differentiate carboxyhaemoglobin from oxyhaemoglobin \u2014 gives falsely high reading. Apply high-flow O2 regardless"}, {"topic": "Oxygen Therapy", "q": "What initial oxygen is appropriate when SpO2 is unavailable or unreliable?", "a": "Nasal cannula or face mask at 6-8 L/min until a reliable SpO2 reading can be obtained"}, {"topic": "Diabetes & BGL", "q": "What BGL defines hypoglycaemia?", "a": "BGL < 4.0 mmol/L"}, {"topic": "Diabetes & BGL", "q": "What BGL defines hyperglycaemia?", "a": "BGL > 11 mmol/L"}, {"topic": "Diabetes & BGL", "q": "What are signs and symptoms of hypoglycaemia?", "a": "Altered LOC, agitation, dizziness, increased appetite, sweating; can progress to seizure or unconsciousness"}, {"topic": "Diabetes & BGL", "q": "What are signs and symptoms of hyperglycaemia?", "a": "Altered LOC, agitation, dizziness, seizure, sweating, polydipsia, polyuria, ketones present"}, {"topic": "Diabetes & BGL", "q": "What is DKA and who is it life-threatening for?", "a": "Diabetic Ketoacidosis \u2014 life-threatening for Type 1; can affect Type 2. Insufficient insulin means liver breaks fat into ketones, changing blood chemistry"}, {"topic": "Diabetes & BGL", "q": "What is Kussmaul breathing and when does it occur?", "a": "Deep, laboured tachypnoea in DKA \u2014 the body attempts to compensate for metabolic acidosis by exhaling CO2"}, {"topic": "Diabetes & BGL", "q": "What is the hallmark smell associated with DKA?", "a": "Acetone/nail polish remover smell on the breath (from ketones)"}, {"topic": "Diabetes & BGL", "q": "What is HHS and which diabetes type does it complicate?", "a": "Hyperosmolar Hyperglycaemic Syndrome \u2014 Type 2 complication; hyperglycaemia without high ketones, severe dehydration, slower onset than DKA"}, {"topic": "Diabetes & BGL", "q": "What is the PTO management for hypoglycaemia?", "a": "Oral glucose paste if patient can swallow and obey commands. BGL monitoring. Escalate if no improvement or patient cannot protect airway."}, {"topic": "Diabetes & BGL", "q": "Why might glucagon be ineffective in some hypoglycaemic patients?", "a": "Low glycogen stores \u2014 frail/elderly patients, those on low carb diets, or alcoholic patients"}, {"topic": "Diabetes & BGL", "q": "What is Type 1 diabetes caused by?", "a": "Autoimmune destruction of beta cells \u2014 no insulin production, glucose cannot enter cells, resulting in hyperglycaemia. Requires insulin injections"}, {"topic": "Diabetes & BGL", "q": "What is Type 2 diabetes?", "a": "Insulin resistance \u2014 decreased insulin receptors in muscle/fat cells. Slow insidious onset. Managed with diet/exercise; may need oral hypoglycaemics or insulin later"}, {"topic": "Pharmacology & Medications", "q": "What are the 4 stages of pharmacokinetics?", "a": "Absorption (into blood), Distribution (throughout body), Metabolism (breakdown), Excretion (removal)"}, {"topic": "Pharmacology & Medications", "q": "What is a toxidrome?", "a": "A clinical fingerprint \u2014 a classic constellation of signs and symptoms caused by toxic effects of a chemical or drug in the body"}, {"topic": "Pharmacology & Medications", "q": "What is the difference between generic and brand drug names?", "a": "Generic = actual drug name (e.g. paracetamol); Brand = commercial trade name (e.g. Panadol). Always use generic names clinically"}, {"topic": "Pharmacology & Medications", "q": "What legislation governs drug scheduling in Australia?", "a": "The Therapeutic Goods Poisons Standard \u2014 a federal instrument listing all scheduled poisons and medicines by schedule (1-10)"}, {"topic": "Pharmacology & Medications", "q": "What gives PTOs the authority to administer medications?", "a": "The Poisons License held by the NEPT provider \u2014 defines which medications NEPT crew members are authorised to use"}, {"topic": "Pharmacology & Medications", "q": "What is Entonox?", "a": "Nitrous oxide (N2O) mixed with oxygen \u2014 inhaled analgesic. Must be self-administered by the patient. EN/ATA scope, not PTO."}, {"topic": "Pharmacology & Medications", "q": "What does pMDI stand for and when is it used?", "a": "Pressurised metered dose inhaler \u2014 used for salbutamol delivery in asthma/anaphylaxis. Preferred over nebuliser at PTO level"}, {"topic": "Pharmacology & Medications", "q": "What analgesics can a PTO administer?", "a": "Paracetamol (oral), ice/warm packs. Methoxyflurane is EN/ATA scope. Entonox is EN/ATA scope."}, {"topic": "Pharmacology & Medications", "q": "What is the adult paracetamol dose and maximum daily dose?", "a": "500 mg to 1 g oral; repeat every 4-6 hours; maximum 4000 mg daily"}, {"topic": "Pharmacology & Medications", "q": "What is the adult methoxyflurane dose?", "a": "3 mL inhaled; can repeat once (max 6 mL daily). Must be self-administered."}, {"topic": "Pharmacology & Medications", "q": "What is contraindicated about paracetamol in ACS?", "a": "Paracetamol is NOT an appropriate analgesic for suspected acute coronary syndrome"}, {"topic": "Pharmacology & Medications", "q": "What is the difference between enteral and parenteral routes?", "a": "Enteral = via GI tract (oral, sublingual, buccal, rectal). Parenteral = not via GI tract (IV, IM, SC, intranasal, inhaled, transdermal, IO)"}, {"topic": "PTO Scope", "q": "Can a PTO use AED defibrillation?", "a": "Yes \u2014 AED is within PTO scope. Manual defibrillation is not (TE or higher)"}, {"topic": "PTO Scope", "q": "Can a PTO insert an oropharyngeal airway?", "a": "Yes \u2014 OPA is within PTO scope"}, {"topic": "PTO Scope", "q": "Can a PTO administer adrenaline via auto-injector (EpiPen) IMI?", "a": "Yes \u2014 adrenaline via auto-injector is PTO scope for anaphylaxis and asthma"}, {"topic": "PTO Scope", "q": "Can a PTO administer adrenaline 1:1000 drawn from an ampoule?", "a": "No \u2014 drawing from ampoule is TE scope minimum. PTOs use auto-injectors only"}, {"topic": "PTO Scope", "q": "Can a PTO administer salbutamol pMDI?", "a": "Yes \u2014 salbutamol via pMDI is PTO scope. Nebulised salbutamol is TE scope (not PTO)"}, {"topic": "PTO Scope", "q": "Can a PTO administer aspirin for ACS?", "a": "Yes \u2014 aspirin oral is within PTO scope for suspected acute coronary syndrome"}, {"topic": "PTO Scope", "q": "Can a PTO administer GTN (glyceryl trinitrate)?", "a": "No \u2014 GTN sublingual is EN/ATA scope minimum, not PTO"}, {"topic": "PTO Scope", "q": "Can a PTO give oral glucose paste for hypoglycaemia?", "a": "Yes \u2014 oral glucose paste and BGL monitoring are within PTO scope"}, {"topic": "PTO Scope", "q": "What transport acuity is within PTO scope?", "a": "Low acuity IFT and unplanned ambulance only. Medium/high acuity requires EN, ATA or higher"}, {"topic": "PTO Scope", "q": "Can a PTO apply arterial tourniquets?", "a": "Yes \u2014 arterial tourniquets and pressure dressings are within PTO scope for major trauma/catastrophic haemorrhage"}, {"topic": "PTO Scope", "q": "Can a PTO apply a C-collar for spinal injuries?", "a": "Yes \u2014 C-collar application is within PTO scope"}, {"topic": "PTO Scope", "q": "What is the PTO management for undifferentiated shock?", "a": "Oxygen only \u2014 IV fluid (normal saline) is TE scope. PTOs provide supportive care, positioning, and escalate"}, {"topic": "Anatomy & Physiology", "q": "What goes in and out of cellular respiration?", "a": "In: oxygen + glucose. Out: CO2 + water + energy"}, {"topic": "Anatomy & Physiology", "q": "What is homeostasis?", "a": "The body's maintenance of a stable internal environment \u2014 involves a sensor, control centre (hypothalamus), and effector responding to changes"}, {"topic": "Anatomy & Physiology", "q": "What is the difference between ICF and interstitial fluid?", "a": "ICF = fluid inside cells. Interstitial fluid = fluid surrounding cells (essentially plasma that has leaked into tissue spaces)"}, {"topic": "Anatomy & Physiology", "q": "What is pathophysiology?", "a": "The study of disordered physiological processes that occur when things go wrong \u2014 how disease disrupts normal function"}, {"topic": "Anatomy & Physiology", "q": "What is proximal vs distal?", "a": "Proximal = closer to the trunk or point of origin; distal = further away (e.g. fingers are distal to the elbow)"}, {"topic": "Anatomy & Physiology", "q": "What are the four tissue types?", "a": "Connective (tendons, ligaments, cartilage), Muscle (smooth, skeletal, cardiac), Epithelial, Nervous"}, {"topic": "Anatomy & Physiology", "q": "What is normal urine output?", "a": "0.5-1.5 mL/kg/hour (approximately 88 mL/hour for an average adult)"}, {"topic": "Anatomy & Physiology", "q": "What is the bladder capacity and urge threshold?", "a": "Males approximately 500 mL, females approximately 700 mL. Urge to urinate begins at 200-350 mL"}, {"topic": "Endocrine System", "q": "What hormones does the anterior pituitary gland produce?", "a": "Growth hormone"}, {"topic": "Endocrine System", "q": "What hormones does the posterior pituitary produce?", "a": "Oxytocin and ADH (anti-diuretic hormone / vasopressin)"}, {"topic": "Endocrine System", "q": "What does the thyroid gland produce?", "a": "Thyroxine (T4), Triiodothyronine (T3), Calcitonin"}, {"topic": "Endocrine System", "q": "What do the adrenal glands produce?", "a": "Adrenaline (epinephrine)"}, {"topic": "Endocrine System", "q": "What does the pancreas produce and which cells produce them?", "a": "Alpha cells produce glucagon (raises BGL); Beta cells produce insulin (lowers BGL)"}, {"topic": "Endocrine System", "q": "What is diabetes insipidus?", "a": "Extreme thirst and large volumes of urine \u2014 caused by insufficient vasopressin (ADH), so kidneys cannot retain water"}, {"topic": "Endocrine System", "q": "What is gestational diabetes?", "a": "Diabetes developing during pregnancy around 24-28 weeks. Usually resolves post-pregnancy but increases risk of Type 2 DM"}, {"topic": "Clinical Escalation", "q": "What makes a patient NOT suitable for NEPT at low acuity?", "a": "HR < 60 or > 100; SBP < 100; any GCS reduction; respiratory status below normal; cardiac chest pain within 2 hours; major trauma; acute stroke symptoms"}, {"topic": "Clinical Escalation", "q": "What is the SAT score and what does it measure?", "a": "Sedation Assessment Tool \u2014 measures agitation/sedation from +3 (combative, violent) to -3 (no response). Guides suitability for NEPT transport"}, {"topic": "Clinical Escalation", "q": "What SAT score is the cut-off for low acuity NEPT transport?", "a": "SAT score 0 (awake and calm) \u2014 any score above 0 or below 0 triggers escalation for low acuity"}, {"topic": "Clinical Escalation", "q": "What is the MSA and what does it assess?", "a": "Mental Status Assessment \u2014 structured tool covering Safety, Appearance, Speech, Thought process, Thought content, Self-harm. Uses OLD framework: Observe, Listen, Discuss"}, {"topic": "Clinical Escalation", "q": "When must care be escalated for a traumatic head injury?", "a": "GCS reduction of 2 or more from normal; or GCS 13-15 with loss of consciousness > 5 minutes, or other listed risk factors"}];
+let topic='All',deck=[],idx=0,kn=0,un=0,flipped=false,canAct=false;
+function topics(){const t=['All'],s=new Set;CARDS.forEach(c=>{if(!s.has(c.topic)){s.add(c.topic);t.push(c.topic)}});return t}
+function filtered(){return topic==='All'?[...CARDS]:CARDS.filter(c=>c.topic===topic)}
+function shuffle(a){const b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]]}return b}
+function init(){renderTopics();reset()}
+function renderTopics(){
+  const bar=document.getElementById('topic-bar');
+  bar.innerHTML='<span>Filter:</span>';
+  topics().forEach(t=>{
+    const b=document.createElement('button');
+    b.className='tb'+(t===topic?' sel':'');b.dataset.t=t;
+    b.textContent=t==='All'?'All ('+CARDS.length+')':t;
+    b.onclick=()=>setTopic(t);bar.appendChild(b);
+  });
+}
+function setTopic(t){
+  topic=t;
+  document.querySelectorAll('.tb').forEach(b=>b.classList.toggle('sel',b.dataset.t===t));
+  const p=document.getElementById('pill-tp');
+  if(t==='All'){p.style.display='none'}else{p.style.display='';p.textContent=t}
+  reset();
+}
+function reset(){
+  deck=shuffle(filtered());idx=0;kn=0;un=0;flipped=false;canAct=false;
+  updateScore();updateSub();hideDone();showCard();
+}
+function shuffleDeck(){deck=shuffle(filtered());idx=0;kn=0;un=0;flipped=false;canAct=false;updateScore();hideDone();showCard()}
+function updateSub(){
+  const f=filtered();
+  document.getElementById('hdr-sub').textContent=f.length+' cards · '+(topic==='All'?'all topics':topic);
+}
+function showCard(){
+  if(idx>=deck.length){showDone();return}
+  const c=deck[idx];
+  document.getElementById('flbl').textContent=c.topic||'Question';
+  document.getElementById('fq').textContent=c.q;
+  document.getElementById('fa').textContent=c.a;
+  document.getElementById('inner').classList.remove('flip');
+  flipped=false;canAct=false;updateProg();
+  document.getElementById('scene').style.display='block';
+  document.getElementById('act-row').style.display='flex';
+  document.getElementById('prog-wrap').style.display='flex';
+}
+function flipCard(){
+  if(idx>=deck.length)return;
+  flipped=!flipped;
+  document.getElementById('inner').classList.toggle('flip',flipped);
+  if(flipped)canAct=true;
+}
+function mark(wasKn){
+  if(!canAct){flipCard();return}
+  if(wasKn)kn++;else un++;
+  updateScore();idx++;
+  if(idx>=deck.length){showDone();return}
+  const s=document.getElementById('scene');
+  s.style.opacity='0';s.style.transition='opacity .1s';
+  setTimeout(()=>{s.style.transition='';showCard();s.style.opacity='1'},110);
+}
+function updateScore(){
+  document.getElementById('pill-kn').textContent='✓ '+kn+' known';
+  document.getElementById('pill-un').textContent='✗ '+un+' to review';
+}
+function updateProg(){
+  const tot=deck.length,pct=tot>0?Math.round(idx/tot*100):0;
+  document.getElementById('prog-fill').style.width=pct+'%';
+  document.getElementById('prog-lbl').textContent=idx+' / '+tot;
+}
+function showDone(){
+  document.getElementById('scene').style.display='none';
+  document.getElementById('act-row').style.display='none';
+  const tot=kn+un,pct=tot>0?Math.round(kn/tot*100):0;
+  document.getElementById('final-pct').textContent=pct+'%';
+  document.getElementById('final-sub').textContent=kn+' of '+tot+' cards known';
+  document.getElementById('done-card').style.display='flex';
+  document.getElementById('prog-fill').style.width='100%';
+  document.getElementById('prog-lbl').textContent=tot+' / '+tot;
+}
+function hideDone(){
+  document.getElementById('done-card').style.display='none';
+  document.getElementById('scene').style.display='block';
+  document.getElementById('act-row').style.display='flex';
+}
+function reviewMissed(){
+  const missed=deck.slice(idx-(kn+un)+kn);
+  deck=shuffle(missed.length>0?missed:filtered());
+  idx=0;kn=0;un=0;updateScore();hideDone();showCard();
+}
+init();
+</script>
+</body>
+</html>
